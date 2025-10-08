@@ -1,0 +1,4 @@
+deep_translator == 1.11.4
+flask == 2.3.3
+bs4 == 0.0.1
+requests == 2.31.0
