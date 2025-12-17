@@ -53,7 +53,7 @@ python3 interface.py
 
 ## Screenshots 📸
 
-**Photos of the project can be found at <a href="https://github.com/new92/IGFI/tree/main/photos">this url</a>**
+**Photos of the project can be found at <a href="https://github.com/new92/trackr/tree/main/images">this url</a>**
 
 ## Contributing 🤝
 
