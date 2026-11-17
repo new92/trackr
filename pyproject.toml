@@ -18,7 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 translation = ["deep-translator>=1.11.4,<2"]
-server = ["gunicorn>=23,<24"]
+server = ["gunicorn>=23,<28"]
 dev = ["pytest>=8,<10", "ruff>=0.13,<1"]
 
 [tool.setuptools.packages.find]
