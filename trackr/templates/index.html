@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Independent Thessaloniki Metro status dashboard, with station and lift availability and a network map.">
+  <title>Trackr — Thessaloniki Metro</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  <script id="ui-labels" type="application/json">{{ t | tojson }}</script>
+</head>
+<body data-refresh-seconds="{{ config['TRACKR_REFRESH_SECONDS'] | int }}">
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="logo" href="/" aria-label="Trackr home">
+        <span class="logo-mark" aria-hidden="true"><span class="logo-line"></span><span class="logo-rail"></span></span>
+        <span class="brand"><strong>trackr<span class="brand-dot">.</span></strong><small>{{ t.brand_sub }}</small></span>
+      </a>
+      <div class="topbar-actions">
+        <label class="language-control" for="language-selector">
+          <span class="language-icon" aria-hidden="true">◎</span>
+          <span class="sr-only">{{ t.language }}</span>
+          <select id="language-selector" aria-label="{{ t.language }}">
+            <option value="el" {% if language == 'el' %}selected{% endif %}>Ελληνικά</option>
+            <option value="en" {% if language == 'en' %}selected{% endif %}>English</option>
+            <option value="fr" {% if language == 'fr' %}selected{% endif %}>Français</option>
+            <option value="de" {% if language == 'de' %}selected{% endif %}>Deutsch</option>
+            <option value="es" {% if language == 'es' %}selected{% endif %}>Español</option>
+          </select>
+        </label>
+        <button id="theme-toggle" class="icon-button" type="button" aria-label="{{ t.light }}" title="{{ t.light }}">◐</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="intro">
+        <div><p class="overline"><span class="live-dot"></span> METRO THESSALONIKI <span class="intro-divider">/</span> M1 + KALAMARIA</p>
+          <h1>{{ t.heading }}<span class="hero-period">.</span></h1>
+          <p class="intro-sub">{{ t.tagline }}</p>
+        </div>
+        <a class="operator-link" href="https://www.thessmetro.gr/" target="_blank" rel="noopener noreferrer">{{ t.source }} <span aria-hidden="true">↗</span></a>
+      </div>
+
+      <section class="status-hero" aria-labelledby="network-heading">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-main">
+          <div class="hero-copy">
+            <p id="network-heading" class="eyebrow">{{ t.status_title }}</p>
+            <div id="service-status" class="hero-status" aria-live="polite"><span class="hero-status-icon" aria-hidden="true">●</span><span id="service-label">{{ t.loading }}</span></div>
+            <p id="service-description" class="hero-description">{{ t.normal_note }}</p>
+            <p id="last-updated" class="last-updated"><span aria-hidden="true">◷</span> {{ t.loading }}</p>
+          </div>
+          <div class="hero-controls">
+            <button id="refresh-button" type="button" class="button primary"><span aria-hidden="true">↻</span> {{ t.refresh }}</button>
+            <button id="notifications-button" type="button" class="button outline"><span aria-hidden="true">♢</span> <span id="notification-label">{{ t.alerts_enable }}</span></button>
+          </div>
+        </div>
+        <div class="hero-rule" aria-hidden="true"></div>
+        <div class="hero-footer"><span class="status-key"><span class="legend-dot good"></span> {{ t.operational }}</span><span class="status-key"><span class="legend-dot bad"></span> {{ t.closed }}</span><span class="status-key"><span class="legend-dot neutral"></span> {{ t.unknown }}</span><span class="hero-trust">{{ t.normal_note }}</span></div>
+      </section>
+
+      <div id="stale-banner" class="alert-banner" role="status" hidden><span aria-hidden="true">⚠</span> <span id="stale-text">{{ t.stale_warning }}</span></div>
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+      <section class="summary-grid" aria-label="{{ t.status_title }}">
+        <article class="summary-card"><div class="summary-icon">🚉</div><div><p>{{ t.confirmed_open }}</p><strong id="stations-stat">—</strong><span id="stations-total" class="metric-unit"></span></div><span class="card-spark" aria-hidden="true">↗</span></article>
+        <article class="summary-card"><div class="summary-icon">↕</div><div><p>{{ t.elevators_open }}</p><strong id="lifts-stat">—</strong><span id="lifts-total" class="metric-unit"></span></div><span class="card-spark" aria-hidden="true">↗</span></article>
+        <article class="summary-card"><div class="summary-icon warning">!</div><div><p>{{ t.closed_count }}</p><strong id="closed-stat">—</strong><span id="unknown-count" class="metric-unit"></span></div><span class="card-spark" aria-hidden="true">—</span></article>
+      </section>
+
+      <section id="announcement-panel" class="announcement-panel" aria-labelledby="announcement-heading" hidden>
+        <span class="announcement-symbol" aria-hidden="true">✳</span>
+        <div class="announcement-body"><h2 id="announcement-heading">{{ t.announcement_title }}</h2><p id="announcement-text"></p><p class="source-language">{{ t.source_language }}</p><a id="announcement-link" target="_blank" rel="noopener noreferrer" hidden>{{ t.source_link }} ↗</a></div>
+      </section>
+
+      <div class="content-grid">
+        <section class="network-panel panel" aria-labelledby="map-heading">
+          <div class="panel-heading"><div><p class="section-kicker">01 / NETWORK</p><h2 id="map-heading">{{ t.map }}</h2></div><span class="panel-tag">18 STATIONS</span></div>
+          <p class="panel-description">{{ t.station_sub }}</p>
+          <div class="map-scroller" tabindex="0" aria-label="{{ t.map }}">
+            <svg id="network-map" viewBox="0 0 1240 705" role="group" aria-label="{{ t.map }}"></svg>
+          </div>
+          <div class="map-legend"><span><i class="legend-dot good"></i> {{ t.operational }}</span><span><i class="legend-dot bad"></i> {{ t.closed }}</span><span><i class="legend-dot neutral"></i> {{ t.unknown }}</span></div>
+          <div class="nearest-panel"><div class="nearest-visual" aria-hidden="true">⌖</div><div class="nearest-text"><h3>{{ t.nearest }}</h3><p id="nearest-info">{{ t.permission }}</p></div><button id="nearest-button" type="button" class="button compact">{{ t.locate }}</button></div>
+          <div class="selected-panel"><div class="selected-header"><p class="section-kicker">{{ t.selected }}</p><span id="selected-line" class="panel-tag"></span></div><h3 id="selected-name">—</h3><div id="selected-description" class="selected-statuses">{{ t.details_hint }}</div></div>
+        </section>
+
+        <section class="stations-panel panel" aria-labelledby="stations-heading">
+          <div class="panel-heading"><div><p class="section-kicker">02 / DIRECTORY</p><h2 id="stations-heading">{{ t.station_heading }}</h2></div><span id="station-count" class="panel-tag">18</span></div>
+          <label class="search-box"><span class="search-icon" aria-hidden="true">⌕</span><span class="sr-only">{{ t.search }}</span><input id="station-search" type="search" autocomplete="off" placeholder="{{ t.search }}"></label>
+          <div class="filters" role="group" aria-label="{{ t.station_heading }}">
+            <button class="filter active" type="button" data-filter="all" aria-pressed="true">{{ t.all }}</button>
+            <button class="filter" type="button" data-filter="issues" aria-pressed="false">{{ t.issues }}</button>
+            <button class="filter" type="button" data-filter="favorites" aria-pressed="false">☆ {{ t.favorites }}</button>
+          </div>
+          <div id="station-list" class="station-list" aria-live="off"><p class="empty-state">{{ t.loading }}</p></div>
+        </section>
+      </div>
+    </main>
+    <footer class="footer"><span>trackr<span class="brand-dot">.</span> <span class="footer-divider">/</span> {{ t.footer }}</span><span>{{ t.credits }}</span><a href="https://github.com/new92/trackr" target="_blank" rel="noopener noreferrer">GitHub ↗</a></footer>
+  </div>
+</body>
+</html>

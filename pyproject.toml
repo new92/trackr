@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thessmetro-trackr"
+version = "3.0.0"
+description = "A resilient Thessaloniki Metro status dashboard"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [{name = "new92"}]
+dependencies = [
+    "Flask>=3.1.3,<4",
+    "requests>=2.33.0,<3",
+    "beautifulsoup4>=4.12,<5",
+]
+
+[project.optional-dependencies]
+translation = ["deep-translator>=1.11.4,<2"]
+server = ["gunicorn>=23,<24"]
+dev = ["pytest>=8,<10", "ruff>=0.13,<1"]
+
+[tool.setuptools.packages.find]
+include = ["trackr*"]
+
+[tool.setuptools.package-data]
+trackr = ["templates/*.html", "static/*.css", "static/*.js", "static/*.svg"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B"]
