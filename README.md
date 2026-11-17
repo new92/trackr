@@ -26,58 +26,150 @@ the operator, especially when data is marked *unknown* or *stale*.
 - Input validation, security headers, configurable settings, tests and CI.
 - Optional machine translation of live Greek announcements with cached results.
 
-## Install
+## Installation
 
-Requires **Python 3.11+**. Linux, macOS, and Windows:
+### Requirements
+
+- **Python 3.11 or newer** and `pip`.
+- **Git**, to clone the repository (or download the source ZIP from GitHub).
+- A terminal: Bash on Linux/macOS, Git Bash or PowerShell on Windows.
+
+Check that Python and Git are available:
 
 ```bash
-# Extract the supplied upgraded ZIP and open its project folder first:
-cd trackr-upgraded
-python -m venv .venv
+python --version
+# On Linux/macOS, use python3 --version if python is unavailable.
+git --version
 ```
 
-Activate the environment:
+Use the instructions for **one** operating system below. The virtual environment
+keeps Trackr's dependencies separate from your global Python installation;
+**administrator/root privileges are not required**.
+
+### Linux / macOS
 
 ```bash
-# macOS / Linux
+# 1. Download the existing GitHub repository.
+git clone https://github.com/new92/trackr.git
+cd trackr
+
+# 2. Create and activate a Python virtual environment.
+python3 -m venv .venv
 source .venv/bin/activate
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-```
 
-Install and run (no `sudo` required):
-
-```bash
+# 3. Install dependencies and start the dashboard.
 python -m pip install -r requirements.txt
 python interface.py
 ```
 
-Open **http://127.0.0.1:5000/?lang=en** (Greek is the default).
+### Windows — Git Bash
 
-The first status request contacts the public operator site. The application
-starts even if the operator is offline; in that case all statuses will be
-marked unknown until a refresh succeeds.
+```bash
+# 1. Download the existing GitHub repository.
+git clone https://github.com/new92/trackr.git
+cd trackr
+
+# 2. Create and activate a Python virtual environment.
+py -3 -m venv .venv
+source .venv/Scripts/activate
+
+# 3. Install dependencies and start the dashboard.
+python -m pip install -r requirements.txt
+python interface.py
+```
+
+> The `py -3` command uses the Python 3 installation selected by the Windows
+> Python launcher. Ensure it is **3.11+**. If the launcher is unavailable,
+> use `python -m venv .venv` instead, after confirming `python --version`.
+
+### Windows — PowerShell
+
+```powershell
+# 1. Download the existing GitHub repository.
+git clone https://github.com/new92/trackr.git
+cd trackr
+
+# 2. Create and activate a Python virtual environment.
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# 3. Install dependencies and start the dashboard.
+python -m pip install -r requirements.txt
+python interface.py
+```
+
+If PowerShell blocks activation due to its execution policy, you can run the
+virtual environment's Python executable directly without changing the policy:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe interface.py
+```
+
+### Open the dashboard
+
+Once the server starts, open **http://127.0.0.1:5000/?lang=en** in your browser.
+Greek is the default; use `?lang=el`, `en`, `fr`, `de`, or `es` to select a language.
+
+Press **Ctrl+C** in the terminal to stop the server. If the virtual environment
+was activated, run `deactivate` to leave it.
+
+The first status request contacts the public operator website. Trackr can start
+even when the operator is unavailable; statuses remain **unknown** until a
+successful refresh. Do not treat an unknown or stale status as confirmation of
+normal service.
+
+### If you already cloned Trackr
+
+You do not need to clone it again. Open your existing repository folder, update
+its files, activate your existing `.venv` and reinstall dependencies:
+
+```bash
+cd trackr
+git pull --ff-only origin main
+# Activate .venv using the command above for your shell.
+python -m pip install -r requirements.txt
+python interface.py
+```
+
+If you have uncommitted changes, review them before running `git pull`. Do not
+delete the hidden `.git/` directory; it contains the repository connection and
+history. Git only uploads new files when you explicitly commit and push them.
 
 ### Optional machine translation
 
 Interface labels and common state names are translated **offline**. Live,
 free-form announcements are originally in Greek. To enable third-party machine
-translation of these announcements:
+translation of announcement text, first activate the virtual environment, then
+install the optional dependency:
 
 ```bash
 python -m pip install -e '.[translation]'
-# set the environment variable before starting
-export TRACKR_MACHINE_TRANSLATION=1     # macOS / Linux
-# $env:TRACKR_MACHINE_TRANSLATION='1'   # Windows PowerShell
+```
+
+Enable translation **in the terminal where you will start the application**:
+
+```bash
+# Linux, macOS, and Windows Git Bash
+export TRACKR_MACHINE_TRANSLATION=1
 python interface.py
 ```
 
-With this enabled, a third-party translator receives Greek announcement text;
-results are cached and failures fall back to Greek. The feature is disabled by
-default to avoid unexpected network calls and privacy disclosures. It is not
-needed for station names or application labels.
+```powershell
+# Windows PowerShell
+$env:TRACKR_MACHINE_TRANSLATION = '1'
+python interface.py
+```
+
+When enabled, a third-party translation service receives Greek announcement
+text. Results are cached and failures fall back to Greek. The feature is
+disabled by default to avoid unexpected external network calls and privacy
+disclosures. It is not needed for station names or application labels.
 
 ### Docker
+
+With Docker installed and running, open a terminal in the cloned repository
+folder (the directory containing `Dockerfile`) and run:
 
 ```bash
 docker build -t trackr .
@@ -85,28 +177,31 @@ docker run --rm -p 8000:8000 trackr
 ```
 
 Open **http://127.0.0.1:8000/**. The image uses Gunicorn as a non-root user.
-`/healthz` checks application liveness; `/readyz` reports availability of a
-fresh operator snapshot and initially responds 503 until data has been fetched.
+`/healthz` checks application liveness; `/readyz` reports the availability of
+a fresh operator snapshot and initially responds 503 until data has been fetched.
 For production, deploy behind an HTTPS reverse proxy and configure TLS and
 request logging according to your environment.
 
-### Production (without Docker)
+### Production without Docker (Linux / macOS)
+
+From the repository root, with the virtual environment active:
 
 ```bash
 python -m pip install -e '.[server]'
 gunicorn --bind 127.0.0.1:8000 --workers 1 --threads 4 'trackr.app:create_app()'
 ```
 
-Each Gunicorn **process** has its own in-memory cache. Using one worker reduces
-scrape traffic; a shared Redis cache or background refresh worker is an option
-if deploying at larger scale. The TTL refresh is *on demand*, not an always-on
-background job.
+Gunicorn is intended for Unix-like systems; **on native Windows, use Docker or
+another Windows-compatible production WSGI server** instead. Each Gunicorn
+**process** has its own in-memory cache. Using one worker reduces scrape
+traffic; a shared cache or background refresh worker is an option at larger
+scale. TTL refresh is *on demand*, not an always-on background job.
 
 ## API
 
 | Endpoint | Method | Behavior |
 | --- | --- | --- |
-| `/` | GET | Dashboard; optional `?lang=el|en|fr|de|es` |
+| `/` | GET | Dashboard; optional `?lang=el\|en\|fr\|de\|es` |
 | `/api` | GET | Latest cached source snapshot; `?lang=` selects display names |
 | `/api/static` | GET | Translated UI strings and legacy aliases; `?lang=` supported |
 | `/api/nearest` | POST | Backwards-compatible nearest-station calculation |
@@ -191,11 +286,13 @@ See [`SECURITY.md`](SECURITY.md) for private vulnerability reporting.
 
 ## Development and tests
 
+From the repository root, with the virtual environment active:
+
 ```bash
 python -m pip install -e '.[dev]'
 ruff check .
 python -m pytest -q
-node --check trackr/static/app.js   # optional JS syntax check (Node installed)
+node --check trackr/static/app.js   # optional JavaScript syntax check (Node installed)
 ```
 
 CI runs tests on Python 3.11, 3.12 and 3.13, checks Ruff and runs a dependency
