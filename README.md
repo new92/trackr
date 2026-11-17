@@ -1,4 +1,4 @@
-# trackr 🚇
+<img width="2400" height="1340" alt="trackr" src="https://github.com/user-attachments/assets/06486544-c6a3-479a-8d76-5cc350fd1ecd" />
 
 **An independent Thessaloniki Metro status dashboard.** Station availability,
 elevator information, announcements, and a clickable schematic of all **18**
